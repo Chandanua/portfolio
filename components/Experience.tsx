@@ -40,6 +40,21 @@ export default function Experience() {
             style={{ background: "linear-gradient(135deg, var(--accent), var(--accent2))" }}
           />
 
+          {/* Pulsing timeline dot */}
+          <div className="absolute left-6 top-10 bottom-10 w-px hidden md:block" style={{ backgroundColor: "var(--border)" }}>
+            <div
+              className="absolute top-0 left-1/2 -translate-x-1/2 w-3 h-3 rounded-full animate-pulse"
+              style={{
+                background: "linear-gradient(135deg, var(--accent), var(--accent2))",
+                boxShadow: "0 0 12px var(--shadow-accent)",
+              }}
+            />
+            <div
+              className="absolute bottom-0 left-1/2 -translate-x-1/2 w-2 h-2 rounded-full"
+              style={{ backgroundColor: "var(--accent2)", opacity: 0.5 }}
+            />
+          </div>
+
           {/* Role header */}
           <div className="flex flex-col items-center justify-center gap-5 mb-7">
             <div>
@@ -90,7 +105,7 @@ export default function Experience() {
                 key={i}
                 initial={{ opacity: 0, x: -16 }}
                 animate={inView ? { opacity: 1, x: 0 } : {}}
-                transition={{ delay: 0.3 + i * 0.1 }}
+                transition={{ delay: 0.35 + i * 0.12 }}
                 className="flex items-start gap-3 text-[15px] leading-relaxed"
                 style={{ color: "var(--text-muted)" }}
               >

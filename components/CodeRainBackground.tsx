@@ -1,9 +1,7 @@
 "use client";
 
 import { useRef, useEffect } from "react";
-import { useTheme } from "./ThemeContext";
 
-// ── Data ─────────────────────────────────────────────────────────────
 const CODE_TOKENS = [
   "const","let","var","=>","async","await","import","export",
   "function","return","if","else","class","new","this",
@@ -16,13 +14,12 @@ const CODE_TOKENS = [
 
 const CIRCUIT_NODES = 22;
 
-// ── Types ─────────────────────────────────────────────────────────────
 interface Particle {
   x: number; y: number; z: number;
   vx: number; vy: number; vz: number;
   token: string;
   size: number;
-  hue: number; // 0=cyan, 1=purple
+  hue: number;
   opacity: number;
   glowing: boolean;
 }
@@ -34,13 +31,8 @@ interface Node {
   pulse: number;
 }
 
-// ── Component ─────────────────────────────────────────────────────────
 export default function CodeRainBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
-  const themeRef = useRef("dark");
-  const { theme } = useTheme();
-
-  useEffect(() => { themeRef.current = theme; }, [theme]);
 
   useEffect(() => {
     const canvas = canvasRef.current;
@@ -63,7 +55,7 @@ export default function CodeRainBackground() {
       z: startFar ? Math.random() * 1200 + 200 : Math.random() * 1400,
       vx: (Math.random() - 0.5) * 0.3,
       vy: (Math.random() - 0.5) * 0.3,
-      vz: -(1 + Math.random() * 2.5),       // flying toward camera
+      vz: -(1 + Math.random() * 2.5),
       token: CODE_TOKENS[Math.floor(Math.random() * CODE_TOKENS.length)],
       size: 9 + Math.random() * 8,
       hue: Math.random(),
@@ -71,7 +63,7 @@ export default function CodeRainBackground() {
       glowing: Math.random() > 0.78,
     });
 
-    for (let i = 0; i < 90; i++) particles.push(mkParticle(true));
+    for (let i = 0; i < 80; i++) particles.push(mkParticle(true));
 
     // ── CIRCUIT NODES (floating connected graph) ─────────────────────
     const nodes: Node[] = [];
@@ -85,7 +77,7 @@ export default function CodeRainBackground() {
         pulse: Math.random() * Math.PI * 2,
       });
     }
-    // build connections (limit to 2-3 nearest)
+
     for (let i = 0; i < nodes.length; i++) {
       const dist: [number, number][] = nodes
         .map((n, j) => [Math.hypot(n.x - nodes[i].x, n.y - nodes[i].y), j] as [number, number])
@@ -94,7 +86,7 @@ export default function CodeRainBackground() {
       nodes[i].connections = dist.map((d) => d[1]);
     }
 
-    // ── SCANLINES ───────────────────────────────────────────────────
+    // ── SCANLINE ───────────────────────────────────────────────────
     const SCAN_SPEED = 0.4;
     let scanY = 0;
 
@@ -109,25 +101,27 @@ export default function CodeRainBackground() {
     };
     window.addEventListener("resize", onResize);
 
-    // ── PROJECT 3-D → 2-D (perspective) ─────────────────────────────
     const FOV = H * 0.85;
     const project = (x: number, y: number, z: number) => {
       if (z <= 0) return null;
       const scale = FOV / z;
-      return {
-        sx: x * scale + W / 2,
-        sy: y * scale + H / 2,
-        scale,
-      };
+      return { sx: x * scale + W / 2, sy: y * scale + H / 2, scale };
     };
+
+    // ── VISIBILITY PAUSE ──────────────────────────────────────────────
+    let paused = false;
+    const onVisibility = () => {
+      paused = document.hidden;
+      if (!paused) { frame = requestAnimationFrame(draw); }
+    };
+    document.addEventListener("visibilitychange", onVisibility);
 
     // ── DRAW ─────────────────────────────────────────────────────────
     const draw = () => {
+      if (paused) return;
       frame = requestAnimationFrame(draw);
       t += 1;
-      const isDark = themeRef.current === "dark";
 
-      // Clear
       ctx.clearRect(0, 0, W, H);
 
       // ── Circuit nodes & edges ──────────────────────────────────────
@@ -150,13 +144,8 @@ export default function CodeRainBackground() {
           const pulseAlpha = (Math.sin(a.pulse) * 0.5 + 0.5) * fadeEdge;
 
           const grad = ctx.createLinearGradient(a.x, a.y, b.x, b.y);
-          if (isDark) {
-            grad.addColorStop(0, `rgba(0,255,225,${pulseAlpha * 0.18})`);
-            grad.addColorStop(1, `rgba(155,89,255,${pulseAlpha * 0.10})`);
-          } else {
-            grad.addColorStop(0, `rgba(0,184,159,${pulseAlpha * 0.12})`);
-            grad.addColorStop(1, `rgba(124,58,237,${pulseAlpha * 0.07})`);
-          }
+          grad.addColorStop(0, `rgba(0,255,225,${pulseAlpha * 0.18})`);
+          grad.addColorStop(1, `rgba(155,89,255,${pulseAlpha * 0.10})`);
           ctx.beginPath();
           ctx.moveTo(a.x, a.y);
           ctx.lineTo(b.x, b.y);
@@ -172,12 +161,10 @@ export default function CodeRainBackground() {
         const r = 1.8 + pulse * 2;
         ctx.beginPath();
         ctx.arc(n.x, n.y, r, 0, Math.PI * 2);
-        ctx.fillStyle = isDark
-          ? `rgba(0,255,225,${0.25 + pulse * 0.35})`
-          : `rgba(0,184,159,${0.2 + pulse * 0.25})`;
+        ctx.fillStyle = `rgba(0,255,225,${0.25 + pulse * 0.35})`;
         ctx.fill();
 
-        if (isDark && pulse > 0.7) {
+        if (pulse > 0.7) {
           ctx.shadowColor = "rgba(0,255,225,0.6)";
           ctx.shadowBlur = 8;
           ctx.fill();
@@ -187,13 +174,11 @@ export default function CodeRainBackground() {
 
       // ── 3-D Particles ─────────────────────────────────────────────
       for (const p of particles) {
-        // Slight mouse parallax
         p.x += p.vx + (mouse.x - W / 2) * 0.00012 * (p.z / 800);
         p.y += p.vy + (mouse.y - H / 2) * 0.00012 * (p.z / 800);
         p.z += p.vz;
 
         if (p.z <= 1 || p.z > 1600) {
-          // Reset to far
           Object.assign(p, mkParticle(true));
           p.z = 1400 + Math.random() * 200;
           continue;
@@ -212,18 +197,12 @@ export default function CodeRainBackground() {
         ctx.font = `${fs}px 'JetBrains Mono', monospace`;
 
         const isCyan = p.hue < 0.5;
-        if (isDark) {
-          ctx.fillStyle = isCyan
-            ? `rgba(0,255,225,${alpha})`
-            : `rgba(175,110,255,${alpha})`;
-          if (p.glowing && depthFade > 0.5) {
-            ctx.shadowColor = isCyan ? "rgba(0,255,225,0.5)" : "rgba(155,89,255,0.5)";
-            ctx.shadowBlur = 10;
-          }
-        } else {
-          ctx.fillStyle = isCyan
-            ? `rgba(0,140,120,${alpha * 0.55})`
-            : `rgba(100,50,200,${alpha * 0.45})`;
+        ctx.fillStyle = isCyan
+          ? `rgba(0,255,225,${alpha})`
+          : `rgba(175,110,255,${alpha})`;
+        if (p.glowing && depthFade > 0.5) {
+          ctx.shadowColor = isCyan ? "rgba(0,255,225,0.5)" : "rgba(155,89,255,0.5)";
+          ctx.shadowBlur = 10;
         }
 
         ctx.fillText(p.token, sx, sy);
@@ -233,43 +212,34 @@ export default function CodeRainBackground() {
 
       // ── Scanline sweep ────────────────────────────────────────────
       scanY = (scanY + SCAN_SPEED) % H;
-      if (isDark) {
-        const scanGrad = ctx.createLinearGradient(0, scanY - 60, 0, scanY + 60);
-        scanGrad.addColorStop(0, "rgba(0,255,225,0)");
-        scanGrad.addColorStop(0.5, "rgba(0,255,225,0.025)");
-        scanGrad.addColorStop(1, "rgba(0,255,225,0)");
-        ctx.fillStyle = scanGrad;
-        ctx.fillRect(0, scanY - 60, W, 120);
-      }
+      const scanGrad = ctx.createLinearGradient(0, scanY - 60, 0, scanY + 60);
+      scanGrad.addColorStop(0, "rgba(0,255,225,0)");
+      scanGrad.addColorStop(0.5, "rgba(0,255,225,0.025)");
+      scanGrad.addColorStop(1, "rgba(0,255,225,0)");
+      ctx.fillStyle = scanGrad;
+      ctx.fillRect(0, scanY - 60, W, 120);
 
-      // ── Horizontal grid lines (tunnel floor perspective) ──────────
+      // ── Horizontal grid lines ──────────────────────────────────
       ctx.save();
       for (let row = 0; row < 12; row++) {
         const zy = 0.05 + row * 0.09;
         const yPos = H / 2 + (H / 2) * zy;
         const xFade = 1 - row / 12;
-        if (isDark) {
-          ctx.strokeStyle = `rgba(0,255,225,${xFade * 0.04})`;
-        } else {
-          ctx.strokeStyle = `rgba(0,140,120,${xFade * 0.025})`;
-        }
+        ctx.strokeStyle = `rgba(0,255,225,${xFade * 0.04})`;
         ctx.lineWidth = 0.7;
         ctx.beginPath();
         ctx.moveTo(0, yPos);
         ctx.lineTo(W, yPos);
         ctx.stroke();
 
-        // vertical convergence lines
-        const vCount = 10;
-        for (let v = 0; v <= vCount; v++) {
-          const xStart = (v / vCount) * W;
-          const xEnd = W / 2 + (xStart - W / 2) * (row / 11) * 0.1;
-          if (row === 0) {
+        if (row === 0) {
+          const vCount = 10;
+          for (let v = 0; v <= vCount; v++) {
+            const xStart = (v / vCount) * W;
             ctx.beginPath();
             ctx.moveTo(xStart, H);
             ctx.lineTo(W / 2, H / 2);
-            if (isDark) ctx.strokeStyle = `rgba(0,255,225,0.025)`;
-            else ctx.strokeStyle = `rgba(0,140,120,0.015)`;
+            ctx.strokeStyle = `rgba(0,255,225,0.025)`;
             ctx.stroke();
           }
         }
@@ -277,13 +247,11 @@ export default function CodeRainBackground() {
       ctx.restore();
 
       // ── Corner vignette ───────────────────────────────────────────
-      if (isDark) {
-        const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, H * 0.9);
-        vig.addColorStop(0, "rgba(6,0,20,0)");
-        vig.addColorStop(1, "rgba(6,0,20,0.65)");
-        ctx.fillStyle = vig;
-        ctx.fillRect(0, 0, W, H);
-      }
+      const vig = ctx.createRadialGradient(W / 2, H / 2, H * 0.2, W / 2, H / 2, H * 0.9);
+      vig.addColorStop(0, "rgba(6,0,20,0)");
+      vig.addColorStop(1, "rgba(6,0,20,0.65)");
+      ctx.fillStyle = vig;
+      ctx.fillRect(0, 0, W, H);
     };
 
     draw();
@@ -292,6 +260,7 @@ export default function CodeRainBackground() {
       cancelAnimationFrame(frame);
       window.removeEventListener("mousemove", onMouseMove);
       window.removeEventListener("resize", onResize);
+      document.removeEventListener("visibilitychange", onVisibility);
     };
   }, []);
 
@@ -299,7 +268,7 @@ export default function CodeRainBackground() {
     <canvas
       ref={canvasRef}
       className="fixed inset-0 z-0 pointer-events-none"
-      style={{ opacity: theme === "dark" ? 1 : 0.5 }}
+      style={{ opacity: 1 }}
     />
   );
 }

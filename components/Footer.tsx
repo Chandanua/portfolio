@@ -3,7 +3,6 @@
 import { motion } from "framer-motion";
 import { Heart, Code2 } from "lucide-react";
 import { FaGithub, FaLinkedin, FaInstagram } from "react-icons/fa";
-import { useTheme } from "./ThemeContext";
 
 const socials = [
   { href: "https://github.com/Chandanua",                                     icon: <FaGithub className="w-4 h-4" />,    label: "GitHub",    color: "#9b59ff" },
@@ -20,7 +19,6 @@ const navLinks = [
 
 export default function Footer() {
   const year = new Date().getFullYear();
-  const { theme } = useTheme();
 
   return (
     <footer
@@ -31,9 +29,7 @@ export default function Footer() {
       <div
         className="absolute inset-0 pointer-events-none"
         style={{
-          background: theme === "dark"
-            ? "radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0,255,225,0.04) 0%, transparent 70%)"
-            : "radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0,184,159,0.04) 0%, transparent 70%)",
+          background: "radial-gradient(ellipse 60% 40% at 50% 110%, rgba(0,255,225,0.04) 0%, transparent 70%)",
         }}
       />
 
@@ -53,7 +49,7 @@ export default function Footer() {
                 className="px-1.5 py-0.5 rounded text-sm font-mono font-bold"
                 style={{
                   background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-                  color: theme === "dark" ? "#060014" : "#fff",
+                  color: "#060014",
                 }}
               >
                 UA
@@ -141,7 +137,7 @@ export default function Footer() {
             <Code2 className="w-3 h-3" style={{ color: "var(--accent)" }} />
             <span style={{ color: "var(--accent)" }}>Next.js</span>
             {" "}+{" "}
-            <span style={{ color: "var(--accent2)" }}>Three.js</span>
+            <span style={{ color: "var(--accent2)" }}>Framer Motion</span>
           </p>
         </div>
       </div>

@@ -2,10 +2,9 @@
 
 import { motion, useInView } from "framer-motion";
 import { useRef, useState } from "react";
-import { Send, Mail, Phone } from "lucide-react";
+import { Send, Mail, Phone, CheckCircle2 } from "lucide-react";
 import { FaLinkedin } from "react-icons/fa";
 import { SectionHeader } from "./About";
-import { useTheme } from "./ThemeContext";
 
 const CONTACT_ITEMS = [
   {
@@ -16,8 +15,8 @@ const CONTACT_ITEMS = [
   },
   {
     icon: <Phone className="w-4 h-4" />,
-    label: "6361372832",
-    href: "tel:6361372832",
+    label: "+91 63613 72832",
+    href: "tel:+916361372832",
     color: "#9b59ff",
   },
   {
@@ -31,30 +30,68 @@ const CONTACT_ITEMS = [
 export default function Contact() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
-  const { theme } = useTheme();
+
   const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
   const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setForm((f) => ({ ...f, [e.target.name]: e.target.value }));
+    if (status === "error") setStatus("idle");
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMsg(null);
+
+    // Cooldown check
+    const lastSent = localStorage.getItem("portfolio_contact_last_sent");
+    if (lastSent) {
+      const diff = Date.now() - parseInt(lastSent, 10);
+      if (diff < 60000) {
+        const remaining = Math.ceil((60000 - diff) / 1000);
+        setErrorMsg(`Please wait ${remaining}s before sending another message.`);
+        setStatus("error");
+        return;
+      }
+    }
+
+    // Validation
+    if (form.name.trim().length < 2) {
+      setErrorMsg("Name must be at least 2 characters.");
+      setStatus("error");
+      return;
+    }
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(form.email)) {
+      setErrorMsg("Please enter a valid email address.");
+      setStatus("error");
+      return;
+    }
+    if (form.message.trim().length < 10) {
+      setErrorMsg("Message must be at least 10 characters.");
+      setStatus("error");
+      return;
+    }
+
     setStatus("sending");
     try {
       const emailjs = (await import("@emailjs/browser")).default;
       emailjs.init("C4KPdcTawSgU-mBmX");
       await emailjs.send("service_6qyi8yb", "template_rvqlufp", {
         title: form.subject || "New message from portfolio",
-        name: form.name,
-        email: form.email,
-        message: form.message,
+        name: form.name.trim(),
+        email: form.email.trim(),
+        message: form.message.trim(),
         to_email: "chandanua56@gmail.com",
       });
       setStatus("sent");
+      setErrorMsg(null);
       setForm({ name: "", email: "", subject: "", message: "" });
+      localStorage.setItem("portfolio_contact_last_sent", Date.now().toString());
     } catch {
+      setErrorMsg("Something went wrong. Try emailing me directly.");
       setStatus("error");
     }
   };
@@ -90,8 +127,8 @@ export default function Contact() {
         {/* ── Info panel ─────────────────────────────── */}
         <motion.div
           className="w-full space-y-6 flex flex-col items-center"
-          initial={{ opacity: 0, x: -36 }}
-          animate={inView ? { opacity: 1, x: 0 } : {}}
+          initial={{ opacity: 0, y: 36 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.1 }}
         >
           <div>
@@ -132,7 +169,7 @@ export default function Contact() {
                 <span
                   className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
                   style={{
-                    backgroundColor: "var(--glass-bg)",
+                    backgroundColor: `${item.color}12`,
                     border: `1px solid color-mix(in srgb, ${item.color} 30%, transparent)`,
                     color: item.color,
                   }}
@@ -154,7 +191,6 @@ export default function Contact() {
               border: "1px solid var(--border)",
             }}
           >
-            {/* chrome */}
             <div className="flex items-center gap-1.5 mb-4">
               <div className="w-2.5 h-2.5 rounded-full bg-red-500 opacity-80" />
               <div className="w-2.5 h-2.5 rounded-full bg-yellow-400 opacity-80" />
@@ -193,8 +229,8 @@ export default function Contact() {
             backdropFilter: "blur(12px)",
             WebkitBackdropFilter: "blur(12px)",
           }}
-          initial={{ opacity: 0, x: 36 }}
-          animate={inView ? { opacity: 1, x: 0 } : {}}
+          initial={{ opacity: 0, y: 36 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.7, delay: 0.2 }}
         >
           <div className="grid sm:grid-cols-2 gap-4 md:gap-5">
@@ -248,7 +284,7 @@ export default function Contact() {
             className="w-full flex items-center justify-center gap-2 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-60"
             style={{
               background: `linear-gradient(135deg, var(--accent), var(--accent2))`,
-              color: theme === "dark" ? "#060014" : "#ffffff",
+              color: "#060014",
               boxShadow: `0 8px 32px var(--shadow-accent)`,
             }}
           >
@@ -269,14 +305,15 @@ export default function Contact() {
           </button>
 
           {status === "sent" && (
-            <motion.p
+            <motion.div
               initial={{ opacity: 0, y: 6 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center text-sm font-mono font-semibold"
+              className="flex items-center justify-center gap-2 text-sm font-mono font-semibold"
               style={{ color: "var(--accent)" }}
             >
-              ✓ Message sent! I&apos;ll get back to you soon.
-            </motion.p>
+              <CheckCircle2 className="w-4 h-4" />
+              Message sent! I&apos;ll get back to you soon.
+            </motion.div>
           )}
           {status === "error" && (
             <motion.p
@@ -284,7 +321,7 @@ export default function Contact() {
               animate={{ opacity: 1, y: 0 }}
               className="text-center text-sm text-red-400 font-mono"
             >
-              Something went wrong. Try emailing me directly.
+              {errorMsg || "Something went wrong. Try emailing me directly."}
             </motion.p>
           )}
         </motion.form>

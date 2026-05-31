@@ -1,26 +1,56 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useTheme } from "./ThemeContext";
-import { Sun, Moon, Menu, X, Terminal } from "lucide-react";
+import { Menu, X, Terminal } from "lucide-react";
 
 const links = [
   { label: "About", href: "#about" },
   { label: "Experience", href: "#experience" },
   { label: "Projects", href: "#projects" },
   { label: "Certs", href: "#certs" },
+  { label: "Achievements", href: "#achievements" },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [active, setActive] = useState("");
-  const { theme, toggle } = useTheme();
+  const manualClickRef = useRef(false);
 
+  // Scroll-aware section tracking via IntersectionObserver
+  useEffect(() => {
+    const sectionIds = ["about", "experience", "projects", "certs", "achievements", "contact"];
+    const observers: IntersectionObserver[] = [];
+
+    const handleIntersect = (entries: IntersectionObserverEntry[]) => {
+      if (manualClickRef.current) return;
+      for (const entry of entries) {
+        if (entry.isIntersecting) {
+          setActive(`#${entry.target.id}`);
+        }
+      }
+    };
+
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      const observer = new IntersectionObserver(handleIntersect, {
+        rootMargin: "-40% 0px -55% 0px",
+        threshold: 0,
+      });
+      observer.observe(el);
+      observers.push(observer);
+    });
+
+    return () => observers.forEach((o) => o.disconnect());
+  }, []);
+
+  // Detect scroll to top → clear active
   useEffect(() => {
     const onScroll = () => {
       setScrolled(window.scrollY > 30);
+      if (window.scrollY < 100) setActive("");
     };
     window.addEventListener("scroll", onScroll, { passive: true });
     return () => window.removeEventListener("scroll", onScroll);
@@ -29,9 +59,10 @@ export default function Navbar() {
   const handleLinkClick = useCallback((href: string) => {
     setActive(href);
     setMenuOpen(false);
+    // Temporarily disable observer tracking to avoid flicker
+    manualClickRef.current = true;
+    setTimeout(() => { manualClickRef.current = false; }, 1000);
   }, []);
-
-  const isDark = theme === "dark";
 
   return (
     <>
@@ -41,15 +72,14 @@ export default function Navbar() {
         animate={{ y: 0 }}
         transition={{ type: "spring", stiffness: 200, damping: 20 }}
       >
-        {/* The Floating Pill Navbar */}
         <motion.nav
           className="pointer-events-auto flex items-center justify-between w-full max-w-5xl rounded-2xl md:rounded-full px-4 md:px-5 py-3 md:py-3.5 transition-all duration-500"
           style={{
-            backgroundColor: isDark ? "rgba(6,0,20,0.65)" : "rgba(255,255,255,0.75)",
-            backdropFilter: "blur(24px)",
-            WebkitBackdropFilter: "blur(24px)",
+            backgroundColor: scrolled ? "rgba(6,0,20,0.8)" : "rgba(6,0,20,0.5)",
+            backdropFilter: scrolled ? "blur(28px) saturate(180%)" : "blur(16px)",
+            WebkitBackdropFilter: scrolled ? "blur(28px) saturate(180%)" : "blur(16px)",
             border: scrolled ? "1px solid var(--border)" : "1px solid transparent",
-            boxShadow: scrolled ? (isDark ? "0 10px 40px rgba(0,255,225,0.05)" : "0 10px 40px rgba(0,0,0,0.08)") : "none",
+            boxShadow: scrolled ? "0 10px 40px rgba(0,255,225,0.05)" : "none",
           }}
         >
           {/* Logo */}
@@ -60,7 +90,7 @@ export default function Navbar() {
                 background: "linear-gradient(135deg, var(--accent), var(--accent2))",
               }}
             >
-              <Terminal size={17} color={isDark ? "#060014" : "#ffffff"} className="stroke-[2.5px]" />
+              <Terminal size={17} color="#060014" className="stroke-[2.5px]" />
             </div>
             <span className="font-display font-black text-xl tracking-tight text-[var(--text-primary)] hidden sm:block">
               Chandan<span style={{ color: "var(--accent)" }}>UA</span>
@@ -78,7 +108,7 @@ export default function Navbar() {
                   onClick={() => handleLinkClick(l.href)}
                   className="relative px-6 py-2 text-sm font-semibold rounded-full transition-colors flex items-center justify-center cursor-pointer"
                   style={{
-                    color: isActive ? (isDark ? "#060014" : "#ffffff") : "var(--text-secondary)",
+                    color: isActive ? "#060014" : "var(--text-secondary)",
                     zIndex: isActive ? 10 : 1,
                   }}
                 >
@@ -99,10 +129,8 @@ export default function Navbar() {
             })}
           </div>
 
-          {/* Right Section (Theme + Contact + Mobile Toggle) */}
+          {/* Right Section */}
           <div className="flex items-center gap-2 md:gap-4 ml-auto">
-
-
             <a
               href="#contact"
               className="hidden md:flex px-6 py-2.5 rounded-full text-sm font-bold transition-all hover:scale-105 active:scale-95 whitespace-nowrap"
@@ -138,7 +166,7 @@ export default function Navbar() {
             transition={{ duration: 0.3, ease: "easeOut" }}
             className="fixed top-24 left-4 right-4 z-[90] md:hidden p-4 rounded-3xl"
             style={{
-              backgroundColor: isDark ? "rgba(6, 0, 20, 0.95)" : "rgba(255, 255, 255, 0.95)",
+              backgroundColor: "rgba(6, 0, 20, 0.95)",
               backdropFilter: "blur(24px)",
               WebkitBackdropFilter: "blur(24px)",
               border: "1px solid var(--neon-border)",
@@ -158,7 +186,7 @@ export default function Navbar() {
                     onClick={() => handleLinkClick(l.href)}
                     className="flex justify-between items-center p-4 rounded-2xl cursor-pointer"
                     style={{
-                      backgroundColor: isActive ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "var(--glass-bg)",
+                      backgroundColor: isActive ? "color-mix(in srgb, var(--accent) 15%, transparent)" : "var(--bg-card)",
                       color: isActive ? "var(--accent)" : "var(--text-primary)",
                       border: isActive ? "1px solid color-mix(in srgb, var(--accent) 30%, transparent)" : "1px solid transparent",
                     }}
@@ -179,7 +207,7 @@ export default function Navbar() {
                 className="mt-2 p-4 text-center rounded-2xl font-black cursor-pointer"
                 style={{
                   background: "linear-gradient(135deg, var(--accent), var(--accent2))",
-                  color: isDark ? "#060014" : "#ffffff",
+                  color: "#060014",
                   boxShadow: "0 4px 20px var(--shadow-accent)",
                 }}
               >

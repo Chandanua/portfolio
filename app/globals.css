@@ -4,7 +4,7 @@
 @config "../tailwind.config.ts";
 
 /* ════════════════════════════════════════════════════════════════
-   DESIGN TOKENS — DARK (default)
+   DESIGN TOKENS — DARK
 ════════════════════════════════════════════════════════════════ */
 
 :root,
@@ -31,15 +31,13 @@ html.dark {
   --shadow-accent2:   rgba(162, 89, 255, 0.22);
 }
 
-
-
 /* ════════════════════════════════════════════════════════════════
    LAYOUT RHYTHM
 ════════════════════════════════════════════════════════════════ */
 
 :root {
   --layout-page-x:   clamp(1.5rem, 6vw, 4rem);
-  --layout-section-y: clamp(8rem, 15vw, 16rem);
+  --layout-section-y: clamp(6rem, 12vw, 12rem);
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -50,7 +48,7 @@ html.dark {
   .layout-section {
     position: relative;
     width: 100%;
-    max-width: 64rem;           /* 5xl — same as navbar */
+    max-width: 64rem;
     margin-left: auto;
     margin-right: auto;
     padding-left: var(--layout-page-x);
@@ -80,7 +78,22 @@ body {
   -moz-osx-font-smoothing: grayscale;
   overflow-x: hidden;
   line-height: 1.65;
-  transition: background 0.35s ease, color 0.35s ease;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   NOISE TEXTURE OVERLAY — subtle grain for premium depth
+════════════════════════════════════════════════════════════════ */
+
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.025;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+  background-size: 200px;
 }
 
 /* ════════════════════════════════════════════════════════════════
@@ -117,7 +130,7 @@ body {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   CURSOR GLOW (dark only)
+   CURSOR GLOW
 ════════════════════════════════════════════════════════════════ */
 
 #cursor-glow {
@@ -137,7 +150,6 @@ body {
   transition: opacity 0.4s ease;
   will-change: left, top;
 }
-
 
 /* ════════════════════════════════════════════════════════════════
    TYPOGRAPHY UTILITIES
@@ -160,15 +172,12 @@ body {
   border: 1px solid var(--glass-border);
 }
 
-
-
 .neon-border {
   border: 1px solid var(--neon-border);
   box-shadow:
     0 0 20px var(--neon-glow),
     inset 0 0 20px rgba(0, 255, 225, 0.015);
 }
-
 
 /* ════════════════════════════════════════════════════════════════
    GRADIENT ACCENT TEXT
@@ -181,15 +190,11 @@ body {
   background-clip: text;
 }
 
-
-
 /* ════════════════════════════════════════════════════════════════
-   SMOOTH THEME TRANSITIONS
+   SMOOTH TRANSITIONS
 ════════════════════════════════════════════════════════════════ */
 
-a, button, input, textarea,
-span, p, h1, h2, h3, h4, h5,
-div, section, footer, nav, article {
+a, button, input, textarea {
   transition:
     background-color 0.3s ease,
     color 0.3s ease,
@@ -208,12 +213,17 @@ div, section, footer, nav, article {
 }
 
 /* ════════════════════════════════════════════════════════════════
-   CUSTOM ANIMATIONS
+   ANIMATIONS
 ════════════════════════════════════════════════════════════════ */
 
 @keyframes float {
   0%, 100% { transform: translateY(0px); }
   50%       { transform: translateY(-8px); }
+}
+
+@keyframes float-slow {
+  0%, 100% { transform: translateY(0px) rotate(0deg); }
+  50%       { transform: translateY(-12px) rotate(1deg); }
 }
 
 @keyframes scanline {
@@ -226,10 +236,40 @@ div, section, footer, nav, article {
   100% { background-position:  200% center; }
 }
 
-.animate-float    { animation: float 4s ease-in-out infinite; }
-.animate-shimmer  {
+@keyframes glow-breathe {
+  0%, 100% { opacity: 0.4; filter: blur(30px); }
+  50%      { opacity: 0.7; filter: blur(40px); }
+}
+
+@keyframes gradient-shift {
+  0%   { background-position: 0% 50%; }
+  50%  { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.animate-float        { animation: float 4s ease-in-out infinite; }
+.animate-float-slow   { animation: float-slow 6s ease-in-out infinite; }
+.animate-glow-breathe { animation: glow-breathe 4s ease-in-out infinite; }
+.animate-shimmer      {
   background-size: 200% auto;
   animation: shimmer 3s linear infinite;
+}
+.animate-gradient-shift {
+  background-size: 200% 200%;
+  animation: gradient-shift 5s ease infinite;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3D TILT CARD UTILITY
+════════════════════════════════════════════════════════════════ */
+
+.card-tilt {
+  transform-style: preserve-3d;
+  transition: transform 0.35s ease-out;
+}
+
+.card-tilt-inner {
+  transform: translateZ(30px);
 }
 
 /* ════════════════════════════════════════════════════════════════

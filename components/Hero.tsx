@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useTheme } from "./ThemeContext";
 import { ArrowRight, Mail } from "lucide-react";
 import { FaGithub } from "react-icons/fa";
 
@@ -53,10 +52,8 @@ const STATS = [
 
 export default function Hero() {
   const role = useTypewriter(ROLES);
-  const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  // Subtle floating particles behind the hero text
   useEffect(() => {
     const c = canvasRef.current;
     if (!c) return;
@@ -64,33 +61,84 @@ export default function Hero() {
     if (!ctx) return;
     let w = (c.width = c.offsetWidth);
     let h = (c.height = c.offsetHeight);
-    const pts = Array.from({ length: 28 }, () => ({
+
+    const mouse = { x: w / 2, y: h / 2 };
+    const onMouse = (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; };
+    window.addEventListener("mousemove", onMouse);
+
+    const pts = Array.from({ length: 35 }, () => ({
       x: Math.random() * w, y: Math.random() * h,
       r: 1 + Math.random() * 2.5,
       vx: (Math.random() - 0.5) * 0.35,
       vy: -0.15 - Math.random() * 0.4,
       life: Math.random(),
+      hue: Math.random(),
     }));
     let raf: number;
+    let paused = false;
+    let isIntersecting = true;
+    let isDocumentVisible = !document.hidden;
+
+    const updatePauseState = () => {
+      const targetPause = !isIntersecting || !isDocumentVisible;
+      if (targetPause !== paused) {
+        paused = targetPause;
+        if (!paused) raf = requestAnimationFrame(draw);
+      }
+    };
+
     const draw = () => {
+      if (paused) return;
       raf = requestAnimationFrame(draw);
       ctx.clearRect(0, 0, w, h);
       for (const p of pts) {
+        // Subtle mouse repulsion
+        const dx = p.x - mouse.x;
+        const dy = p.y - mouse.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 150 && dist > 0) {
+          const force = (150 - dist) / 150 * 0.3;
+          p.x += (dx / dist) * force;
+          p.y += (dy / dist) * force;
+        }
+
         p.x += p.vx; p.y += p.vy; p.life += 0.003;
         if (p.y < -10 || p.life > 1) {
           p.y = h + 10; p.x = Math.random() * w; p.life = 0;
         }
-        const alpha = Math.sin(p.life * Math.PI) * 0.4;
+        const alpha = Math.sin(p.life * Math.PI) * 0.5;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2);
-        ctx.fillStyle = `rgba(0,255,225,${alpha})`;
+        ctx.fillStyle = p.hue < 0.5
+          ? `rgba(0,255,225,${alpha})`
+          : `rgba(162,89,255,${alpha})`;
         ctx.fill();
       }
     };
     draw();
+
     const onResize = () => { w = c.width = c.offsetWidth; h = c.height = c.offsetHeight; };
     window.addEventListener("resize", onResize);
-    return () => { cancelAnimationFrame(raf); window.removeEventListener("resize", onResize); };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      isIntersecting = entry.isIntersecting;
+      updatePauseState();
+    }, { threshold: 0 });
+    observer.observe(c);
+
+    const onVisibility = () => {
+      isDocumentVisible = !document.hidden;
+      updatePauseState();
+    };
+    document.addEventListener("visibilitychange", onVisibility);
+
+    return () => {
+      cancelAnimationFrame(raf);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("mousemove", onMouse);
+      document.removeEventListener("visibilitychange", onVisibility);
+      observer.disconnect();
+    };
   }, []);
 
   return (
@@ -102,17 +150,22 @@ export default function Hero() {
       <div
         className="absolute inset-0 z-[1] pointer-events-none"
         style={{
-          background: theme === "dark"
-            ? "radial-gradient(ellipse 70% 80% at 20% 50%, rgba(0,255,225,0.04) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 80% 30%, rgba(155,89,255,0.05) 0%, transparent 60%)"
-            : "radial-gradient(ellipse 70% 80% at 20% 50%, rgba(0,184,159,0.06) 0%, transparent 60%)",
+          background: "radial-gradient(ellipse 70% 80% at 20% 50%, rgba(0,255,225,0.04) 0%, transparent 60%), radial-gradient(ellipse 50% 60% at 80% 30%, rgba(155,89,255,0.05) 0%, transparent 60%)",
         }}
       />
+
+      {/* Animated gradient orb */}
+      <div
+        className="absolute top-1/4 left-1/4 w-[500px] h-[500px] rounded-full animate-glow-breathe pointer-events-none z-[1]"
+        style={{
+          background: "radial-gradient(circle, rgba(0,255,225,0.08) 0%, rgba(162,89,255,0.04) 40%, transparent 70%)",
+        }}
+      />
+
       <div
         className="absolute bottom-0 left-0 right-0 h-48 z-[1] pointer-events-none"
         style={{
-          background: theme === "dark"
-            ? "linear-gradient(to top, #05000f 0%, transparent 100%)"
-            : "linear-gradient(to top, #f0f4fb 0%, transparent 100%)",
+          background: "linear-gradient(to top, #05000f 0%, transparent 100%)",
         }}
       />
 
@@ -123,7 +176,7 @@ export default function Hero() {
       />
 
       {/* Content */}
-      <div className="relative z-10 max-w-5xl mx-auto w-full px-[var(--layout-page-x)] pt-[calc(6rem+env(safe-area-inset-top,0px))] sm:pt-36 pb-24 md:pb-32 md:pt-32 lg:pt-36 flex flex-col items-center md:flex-row md:items-center gap-14 lg:gap-20">
+      <div className="relative z-10 max-w-5xl mx-auto w-full px-[var(--layout-page-x)] pt-32 sm:pt-36 pb-24 md:pb-32 md:pt-32 lg:pt-36 flex flex-col items-center md:flex-row md:items-center gap-14 lg:gap-20">
         {/* Text side */}
         <motion.div
           className="flex-1 text-center md:text-left"
@@ -153,7 +206,7 @@ export default function Hero() {
 
           {/* Mobile profile pic */}
           <div className="flex md:hidden justify-center mb-9 md:mb-10">
-            <ProfilePic theme={theme} />
+            <ProfilePic />
           </div>
 
           {/* Heading */}
@@ -174,10 +227,10 @@ export default function Hero() {
             >
               Hi, I&apos;m{" "}
               <span
-                className="bg-clip-text text-transparent inline-block"
+                className="bg-clip-text text-transparent inline-block animate-gradient-shift"
                 style={{
-                  backgroundImage: `linear-gradient(135deg, var(--accent) 0%, var(--accent2) 60%, var(--accent) 100%)`,
-                  backgroundSize: "200%",
+                  backgroundImage: `linear-gradient(135deg, var(--accent) 0%, var(--accent2) 50%, var(--accent) 100%)`,
+                  backgroundSize: "200% 200%",
                 }}
               >
                 Chandan
@@ -193,7 +246,7 @@ export default function Hero() {
 
           {/* Typewriter */}
           <motion.div
-            className="h-10 mb-7 flex items-center"
+            className="h-10 mb-7 flex items-center justify-center md:justify-start"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.4 }}
@@ -215,7 +268,7 @@ export default function Hero() {
 
           {/* Bio */}
           <motion.p
-            className="text-base sm:text-lg leading-relaxed max-w-xl mb-12"
+            className="text-base sm:text-lg leading-relaxed max-w-xl mb-12 mx-auto md:mx-0"
             style={{ color: "var(--text-muted)" }}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -240,7 +293,7 @@ export default function Hero() {
               className="group flex w-full sm:w-auto justify-center items-center gap-2 px-6 py-3.5 rounded-2xl font-bold text-sm transition-all duration-200 hover:scale-[1.03] active:scale-[0.98]"
               style={{
                 background: `linear-gradient(135deg, var(--accent), var(--accent2))`,
-                color: theme === "dark" ? "#060014" : "#ffffff",
+                color: "#060014",
                 boxShadow: `0 8px 32px var(--shadow-accent), 0 0 0 0 var(--accent)`,
               }}
             >
@@ -319,7 +372,7 @@ export default function Hero() {
           animate={{ opacity: 1, scale: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1], delay: 0.25 }}
         >
-          <ProfilePic theme={theme} />
+          <ProfilePic />
         </motion.div>
       </div>
 
@@ -349,7 +402,7 @@ export default function Hero() {
   );
 }
 
-function ProfilePic({ theme }: { theme: string }) {
+function ProfilePic() {
   return (
     <div className="relative flex items-center justify-center" style={{ width: 280, height: 280 }}>
       {/* Outer rotating conic ring */}
@@ -375,13 +428,11 @@ function ProfilePic({ theme }: { theme: string }) {
       />
       {/* Glow blob */}
       <div
-        className="absolute rounded-full blur-3xl"
+        className="absolute rounded-full blur-3xl animate-glow-breathe"
         style={{
           inset: -30,
           background:
-            theme === "dark"
-              ? "radial-gradient(circle, rgba(0,255,225,0.22) 0%, rgba(155,89,255,0.12) 50%, transparent 70%)"
-              : "radial-gradient(circle, rgba(0,184,159,0.18) 0%, rgba(124,58,237,0.1) 50%, transparent 70%)",
+            "radial-gradient(circle, rgba(0,255,225,0.22) 0%, rgba(155,89,255,0.12) 50%, transparent 70%)",
         }}
       />
       {/* Background disc */}
@@ -389,7 +440,7 @@ function ProfilePic({ theme }: { theme: string }) {
         className="absolute rounded-full"
         style={{
           inset: -2,
-          backgroundColor: theme === "dark" ? "#05000f" : "#f0f4fb",
+          backgroundColor: "#05000f",
           borderRadius: "50%",
         }}
       />
@@ -399,10 +450,8 @@ function ProfilePic({ theme }: { theme: string }) {
         style={{
           width: 240,
           height: 240,
-          border: `3px solid ${theme === "dark" ? "rgba(0,255,225,0.2)" : "rgba(0,184,159,0.2)"}`,
-          boxShadow: theme === "dark"
-            ? "inset 0 0 30px rgba(0,255,225,0.05)"
-            : "inset 0 0 24px rgba(0,184,159,0.04)",
+          border: "3px solid rgba(0,255,225,0.2)",
+          boxShadow: "inset 0 0 30px rgba(0,255,225,0.05)",
         }}
       >
         <Image
