@@ -92,7 +92,7 @@ export default function Navbar() {
             >
               <Terminal size={17} color="#060014" className="stroke-[2.5px]" />
             </div>
-            <span className="font-display font-black text-xl tracking-tight text-[var(--text-primary)] hidden sm:block">
+            <span className="font-display font-black text-xl text-[var(--text-primary)] hidden sm:block">
               Chandan<span style={{ color: "var(--accent)" }}>UA</span>
             </span>
           </a>
@@ -146,6 +146,9 @@ export default function Navbar() {
             {/* Mobile Menu Toggle */}
             <button
               onClick={() => setMenuOpen(!menuOpen)}
+              aria-label={menuOpen ? "Close navigation menu" : "Open navigation menu"}
+              aria-expanded={menuOpen}
+              aria-controls="mobile-navigation"
               className="p-2.5 md:hidden rounded-full bg-[var(--code-bg)] border border-[var(--border)] text-[var(--text-primary)] flex-shrink-0"
             >
               <motion.div animate={{ rotate: menuOpen ? 90 : 0 }}>
@@ -160,6 +163,7 @@ export default function Navbar() {
       <AnimatePresence>
         {menuOpen && (
           <motion.div
+            id="mobile-navigation"
             initial={{ opacity: 0, y: -20, scale: 0.95 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -20, scale: 0.95 }}

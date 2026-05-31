@@ -226,7 +226,7 @@ export function SectionHeader({
       </span>
       <h2
         className="font-display text-4xl sm:text-5xl font-black"
-        style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}
+        style={{ color: "var(--text-primary)", letterSpacing: 0 }}
       >
         {title}
       </h2>

@@ -122,7 +122,7 @@ function ProjectCard({ p, i, inView }: { p: Project; i: number; inView: boolean 
   }, []);
 
   return (
-    <div className="w-full sm:w-[calc(50%-1.5rem)] lg:w-[calc(33.333%-2rem)] max-w-[420px] flex">
+    <div className="w-full flex">
       <motion.div
         ref={cardRef}
         initial={{ opacity: 0, y: 40 }}
@@ -223,7 +223,7 @@ function ProjectCard({ p, i, inView }: { p: Project; i: number; inView: boolean 
           <div className="flex items-start justify-between gap-4 mb-5">
             <h3
               className="font-display text-lg font-bold leading-tight"
-              style={{ color: "var(--text-primary)", letterSpacing: "-0.01em" }}
+              style={{ color: "var(--text-primary)", letterSpacing: 0 }}
             >
               {p.title}
             </h3>
@@ -294,10 +294,10 @@ export default function Projects() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="projects" ref={ref} className="layout-section scroll-mt-24">
+    <section id="projects" ref={ref} className="layout-section layout-section-wide scroll-mt-24">
       <SectionHeader num="03" title="Featured Projects" inView={inView} />
 
-      <div className="flex flex-wrap justify-center w-full gap-10 md:gap-12 lg:gap-14">
+      <div className="grid w-full grid-cols-1 gap-10 sm:grid-cols-2 xl:grid-cols-3">
         {projects.map((p, i) => (
           <ProjectCard key={p.title} p={p} i={i} inView={inView} />
         ))}

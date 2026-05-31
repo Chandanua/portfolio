@@ -56,12 +56,12 @@ export default function Certificates() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="certs" ref={ref} className="layout-section scroll-mt-24">
+    <section id="certs" ref={ref} className="layout-section layout-section-wide scroll-mt-24">
       <SectionHeader num="04" title="Certificates" inView={inView} />
 
-      <div className="flex flex-wrap justify-center w-full gap-6 sm:gap-8 lg:gap-10">
+      <div className="grid w-full grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-6 lg:gap-10">
         {certs.map((c, i) => (
-          <div key={c.name} className="w-[calc(50%-1.5rem)] sm:w-[calc(33.333%-2rem)] lg:w-[calc(16.666%-2.5rem)] flex justify-center min-w-[140px] max-w-[200px]">
+          <div key={c.name} className="w-full min-w-0">
             {c.file ? (
               <motion.a
                 href={c.file}

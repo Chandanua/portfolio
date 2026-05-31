@@ -37,32 +37,36 @@ html.dark {
 
 :root {
   --layout-page-x:   clamp(1.5rem, 6vw, 4rem);
-  --layout-section-y: clamp(6rem, 12vw, 12rem);
+  --layout-section-y: clamp(4.5rem, 8vw, 8rem);
 }
 
 /* ════════════════════════════════════════════════════════════════
    SECTION SHELL — centered, consistent max-width & gutters
 ════════════════════════════════════════════════════════════════ */
 
-@layer components {
-  .layout-section {
-    position: relative;
-    width: 100%;
-    max-width: 64rem;
-    margin-left: auto;
-    margin-right: auto;
-    padding-left: var(--layout-page-x);
-    padding-right: var(--layout-page-x);
-    padding-top: var(--layout-section-y);
-    padding-bottom: var(--layout-section-y);
-  }
+.layout-section {
+  position: relative;
+  width: 100%;
+  max-width: 64rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: var(--layout-page-x);
+  padding-right: var(--layout-page-x);
+  padding-top: var(--layout-section-y);
+  padding-bottom: var(--layout-section-y);
+}
+
+.layout-section-wide {
+  max-width: 76rem;
 }
 
 /* ════════════════════════════════════════════════════════════════
    BASE
 ════════════════════════════════════════════════════════════════ */
 
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; margin: 0; }
+}
 
 html {
   scroll-behavior: smooth;

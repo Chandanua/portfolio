@@ -14,33 +14,38 @@ const ROLES = [
 ];
 
 function useTypewriter(lines: string[]) {
-  const [text, setText] = useState("");
   const [lineIdx, setLineIdx] = useState(0);
   const [charIdx, setCharIdx] = useState(0);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     const current = lines[lineIdx];
-    let timer: NodeJS.Timeout;
-    if (!deleting) {
-      if (charIdx < current.length) {
-        timer = setTimeout(() => setCharIdx((c) => c + 1), 65);
-      } else {
-        timer = setTimeout(() => setDeleting(true), 2000);
+    const delay = !deleting && charIdx === current.length ? 2000 : deleting ? 30 : 65;
+
+    const timer = setTimeout(() => {
+      if (!deleting && charIdx < current.length) {
+        setCharIdx((c) => c + 1);
+        return;
       }
-    } else {
+
+      if (!deleting) {
+        setDeleting(true);
+        return;
+      }
+
       if (charIdx > 0) {
-        timer = setTimeout(() => setCharIdx((c) => c - 1), 30);
-      } else {
-        setDeleting(false);
-        setLineIdx((i) => (i + 1) % lines.length);
+        setCharIdx((c) => c - 1);
+        return;
       }
-    }
-    setText(current.slice(0, charIdx));
+
+      setDeleting(false);
+      setLineIdx((i) => (i + 1) % lines.length);
+    }, delay);
+
     return () => clearTimeout(timer);
   }, [charIdx, deleting, lineIdx, lines]);
 
-  return text;
+  return lines[lineIdx].slice(0, charIdx);
 }
 
 const STATS = [
@@ -223,7 +228,7 @@ export default function Hero() {
             </p>
             <h1
               className="font-display text-5xl sm:text-6xl lg:text-7xl xl:text-8xl font-black leading-[1.0] mb-2"
-              style={{ color: "var(--text-primary)", letterSpacing: "-0.03em" }}
+              style={{ color: "var(--text-primary)", letterSpacing: 0 }}
             >
               Hi, I&apos;m{" "}
               <span
@@ -238,7 +243,7 @@ export default function Hero() {
             </h1>
             <h2
               className="font-display text-3xl sm:text-4xl lg:text-5xl font-bold mb-6"
-              style={{ color: "var(--text-secondary)", letterSpacing: "-0.02em" }}
+              style={{ color: "var(--text-secondary)", letterSpacing: 0 }}
             >
               Uttharkar A
             </h2>

@@ -27,6 +27,11 @@ const CONTACT_ITEMS = [
   },
 ];
 
+interface ContactResponse {
+  error?: string;
+  ok?: boolean;
+}
+
 export default function Contact() {
   const ref = useRef<HTMLElement>(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
@@ -44,18 +49,6 @@ export default function Contact() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
-
-    // Cooldown check
-    const lastSent = localStorage.getItem("portfolio_contact_last_sent");
-    if (lastSent) {
-      const diff = Date.now() - parseInt(lastSent, 10);
-      if (diff < 60000) {
-        const remaining = Math.ceil((60000 - diff) / 1000);
-        setErrorMsg(`Please wait ${remaining}s before sending another message.`);
-        setStatus("error");
-        return;
-      }
-    }
 
     // Validation
     if (form.name.trim().length < 2) {
@@ -77,21 +70,28 @@ export default function Contact() {
 
     setStatus("sending");
     try {
-      const emailjs = (await import("@emailjs/browser")).default;
-      emailjs.init("C4KPdcTawSgU-mBmX");
-      await emailjs.send("service_6qyi8yb", "template_rvqlufp", {
-        title: form.subject || "New message from portfolio",
-        name: form.name.trim(),
-        email: form.email.trim(),
-        message: form.message.trim(),
-        to_email: "chandanua56@gmail.com",
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          name: form.name,
+          email: form.email,
+          subject: form.subject,
+          message: form.message,
+        }),
       });
+
+      const result = (await response.json().catch(() => ({}))) as ContactResponse;
+
+      if (!response.ok) {
+        throw new Error(result.error || "Something went wrong. Try emailing me directly.");
+      }
+
       setStatus("sent");
       setErrorMsg(null);
       setForm({ name: "", email: "", subject: "", message: "" });
-      localStorage.setItem("portfolio_contact_last_sent", Date.now().toString());
-    } catch {
-      setErrorMsg("Something went wrong. Try emailing me directly.");
+    } catch (error) {
+      setErrorMsg(error instanceof Error ? error.message : "Something went wrong. Try emailing me directly.");
       setStatus("error");
     }
   };
@@ -134,7 +134,7 @@ export default function Contact() {
           <div>
             <h3
               className="font-display text-2xl font-black mb-2"
-              style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}
+              style={{ color: "var(--text-primary)", letterSpacing: 0 }}
             >
               Let&apos;s build something
               <span

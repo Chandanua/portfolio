@@ -49,12 +49,12 @@ export default function Achievements() {
   const inView = useInView(ref, { once: true, margin: "-80px" });
 
   return (
-    <section id="achievements" ref={ref} className="layout-section scroll-mt-24">
+    <section id="achievements" ref={ref} className="layout-section layout-section-wide scroll-mt-24">
       <SectionHeader num="05" title="Achievements" inView={inView} />
 
-      <div className="flex flex-wrap justify-center w-full gap-8 md:gap-10">
+      <div className="grid w-full grid-cols-1 gap-8 sm:grid-cols-2 xl:grid-cols-4">
         {achievements.map((a, i) => (
-          <div key={a.title} className="w-full sm:w-[calc(50%-1.25rem)] lg:w-[calc(25%-1.5rem)] max-w-[300px] flex text-left">
+          <div key={a.title} className="w-full flex text-left">
           <motion.div
             initial={{ opacity: 0, y: 40 }}
             animate={inView ? { opacity: 1, y: 0 } : {}}

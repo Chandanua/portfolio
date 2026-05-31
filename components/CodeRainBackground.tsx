@@ -40,10 +40,22 @@ export default function CodeRainBackground() {
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
-    let W = canvas.width = window.innerWidth;
-    let H = canvas.height = window.innerHeight;
+    const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+    let W = window.innerWidth;
+    let H = window.innerHeight;
     let frame: number;
-    let t = 0;
+
+    const sizeCanvas = () => {
+      W = window.innerWidth;
+      H = window.innerHeight;
+      canvas.width = Math.floor(W * dpr);
+      canvas.height = Math.floor(H * dpr);
+      canvas.style.width = `${W}px`;
+      canvas.style.height = `${H}px`;
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    sizeCanvas();
 
     // ── PARTICLES (3-D code tokens flying toward camera) ────────────
     const particles: Particle[] = [];
@@ -63,7 +75,7 @@ export default function CodeRainBackground() {
       glowing: Math.random() > 0.78,
     });
 
-    for (let i = 0; i < 80; i++) particles.push(mkParticle(true));
+    for (let i = 0; i < (reduceMotion ? 24 : 56); i++) particles.push(mkParticle(true));
 
     // ── CIRCUIT NODES (floating connected graph) ─────────────────────
     const nodes: Node[] = [];
@@ -95,10 +107,7 @@ export default function CodeRainBackground() {
     const onMouseMove = (e: MouseEvent) => { mouse.x = e.clientX; mouse.y = e.clientY; };
     window.addEventListener("mousemove", onMouseMove);
 
-    const onResize = () => {
-      W = canvas.width = window.innerWidth;
-      H = canvas.height = window.innerHeight;
-    };
+    const onResize = sizeCanvas;
     window.addEventListener("resize", onResize);
 
     const FOV = H * 0.85;
@@ -120,7 +129,6 @@ export default function CodeRainBackground() {
     const draw = () => {
       if (paused) return;
       frame = requestAnimationFrame(draw);
-      t += 1;
 
       ctx.clearRect(0, 0, W, H);
 

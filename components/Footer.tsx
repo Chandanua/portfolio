@@ -41,7 +41,7 @@ export default function Footer() {
             <a href="#home" className="flex items-center gap-2">
               <span
                 className="font-display font-black text-2xl bg-clip-text text-transparent"
-                style={{ backgroundImage: "linear-gradient(135deg, var(--text-primary) 40%, var(--accent))", letterSpacing: "-0.03em" }}
+                style={{ backgroundImage: "linear-gradient(135deg, var(--text-primary) 40%, var(--accent))", letterSpacing: 0 }}
               >
                 Chandan
               </span>

@@ -60,7 +60,7 @@ export default function Experience() {
             <div>
               <h3
                 className="font-display text-2xl font-black mb-1"
-                style={{ color: "var(--text-primary)", letterSpacing: "-0.02em" }}
+                style={{ color: "var(--text-primary)", letterSpacing: 0 }}
               >
                 Developer Intern
               </h3>
